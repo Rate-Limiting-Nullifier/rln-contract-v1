@@ -4,4 +4,17 @@
     <img src="https://github.com/Rate-Limiting-Nullifier/rln-contract/workflows/Tests/badge.svg" width="140">
 </p>
 
-<h3 align=center><i>This is the fork of <a href="https://github.com/vacp2p/rln-contract">Vac's RLN smart-contract</a></i></h3>
+<h4 align=center><i>This is the fork of <a href="https://github.com/vacp2p/rln-contract">Vac's RLN smart-contract</a></i></h4>
+
+## How to use
+
+Install Foundry framework:
+```bash
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+```
+
+Build:
+```bash
+forge build
+```
