@@ -18,3 +18,8 @@ Build:
 ```bash
 forge build
 ```
+
+Test:
+```bash
+forge test
+```
