@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
-import "../src/Rln.sol";
+import "../src/RLN.sol";
 import "../src/PoseidonHasher.sol";
 
 contract RlnTest is Test {
