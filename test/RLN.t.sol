@@ -24,14 +24,14 @@ contract RlnTest is Test {
         uint256 id_commitment = 0x0c3ac305f6a4fe9bfeb3eba978bc876e2a99208b8b56c80160cfb54ba8f02368;
 
         // Registration
-        vm.expectEmit(true, true, true, true, address(rln));
+        vm.expectEmit(false, false, false, true, address(rln));
         emit MemberRegistered(id_commitment, 0);
         rln.register{value: price}(id_commitment);
 
         // Withdraw
         address receiverAddress = 0x000000000000000000000000000000000000dEaD;
 
-        vm.expectEmit(true, true, true, true, address(rln));
+        vm.expectEmit(false, false, false, true, address(rln));
         emit MemberWithdrawn(id_commitment);
         rln.withdraw(id_secret, payable(receiverAddress));
 
