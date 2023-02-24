@@ -1,21 +1,25 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: Apache-2.0 OR MIT
 pragma solidity 0.8.19;
 
 import {IPoseidonHasher} from "./PoseidonHasher.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract RLN {
+    using SafeERC20 for IERC20;
+
     uint256 public immutable MEMBERSHIP_DEPOSIT;
     uint256 public immutable DEPTH;
     uint256 public immutable SET_SIZE;
 
     uint256 public pubkeyIndex = 0;
-    address token;
 
     // This mapping is used to keep track of the public keys that have been registered
     // with the stake
     mapping(uint256 => uint256) public members;
 
     IPoseidonHasher public poseidonHasher;
+    IERC20 public token;
 
     event MemberRegistered(uint256 pubkey, uint256 index);
     event MemberWithdrawn(uint256 pubkey);
@@ -24,8 +28,9 @@ contract RLN {
         MEMBERSHIP_DEPOSIT = membershipDeposit;
         DEPTH = depth;
         SET_SIZE = 1 << depth;
+
         poseidonHasher = IPoseidonHasher(_poseidonHasher);
-        token = _token;
+        token = IERC20(_token);
     }
 
     function register(uint256 pubkey) external payable {
