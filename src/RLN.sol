@@ -37,7 +37,7 @@ contract RLN {
         _register(pubkey);
     }
 
-    function registerBatch(uint256[] calldata pubkeys) external payable {
+    function registerBatch(uint256[] calldata pubkeys) external {
         uint256 pubkeyLen = pubkeys.length;
         require(pubkeyIndex + pubkeylen <= SET_SIZE, "RLN, registerBatch: set is full");
 
