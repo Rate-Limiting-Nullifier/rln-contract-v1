@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17;
+pragma solidity 0.8.19;
 
 import {IPoseidonHasher} from "./PoseidonHasher.sol";
 
@@ -9,6 +9,7 @@ contract RLN {
     uint256 public immutable SET_SIZE;
 
     uint256 public pubkeyIndex = 0;
+    address token;
 
     // This mapping is used to keep track of the public keys that have been registered
     // with the stake
@@ -19,11 +20,12 @@ contract RLN {
     event MemberRegistered(uint256 pubkey, uint256 index);
     event MemberWithdrawn(uint256 pubkey);
 
-    constructor(uint256 membershipDeposit, uint256 depth, address _poseidonHasher) {
+    constructor(uint256 membershipDeposit, uint256 depth, address _poseidonHasher, address token) {
         MEMBERSHIP_DEPOSIT = membershipDeposit;
         DEPTH = depth;
         SET_SIZE = 1 << depth;
         poseidonHasher = IPoseidonHasher(_poseidonHasher);
+        token = _token;
     }
 
     function register(uint256 pubkey) external payable {
