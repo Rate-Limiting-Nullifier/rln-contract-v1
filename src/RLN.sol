@@ -15,6 +15,7 @@ contract RLN {
     address public immutable FEE_RECEIVER;
 
     // Fee percentage
+    uint256 public constant FEE_PERCENTAGE = 5;
     uint256 public immutable FEE;
 
     uint256 public pubkeyIndex = 0;
@@ -26,12 +27,12 @@ contract RLN {
     event MemberRegistered(uint256 pubkey, uint256 index);
     event MemberWithdrawn(uint256 pubkey);
 
-    constructor(uint256 membershipDeposit, uint256 depth, address _poseidonHasher, address token) {
+    constructor(uint256 membershipDeposit, uint256 depth, address feeReceiver, address _poseidonHasher, address token) {
         MEMBERSHIP_DEPOSIT = membershipDeposit;
         DEPTH = depth;
         SET_SIZE = 1 << depth;
 
-        uint256 FEE_PERCENTAGE = 5;
+        FEE_RECEIVER = feeReceiver;
         FEE = FEE_PERCENTAGE * MEMBERSHIP_DEPOSIT / 100;
 
         poseidonHasher = IPoseidonHasher(_poseidonHasher);
