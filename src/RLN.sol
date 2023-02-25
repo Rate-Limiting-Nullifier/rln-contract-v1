@@ -12,6 +12,11 @@ contract RLN {
     uint256 public immutable DEPTH;
     uint256 public immutable SET_SIZE;
 
+    address public immutable FEE_RECEIVER;
+
+    // Fee percentage
+    uint256 public immutable FEE;
+
     uint256 public pubkeyIndex = 0;
     mapping(uint256 => uint256) public members;
 
@@ -25,6 +30,9 @@ contract RLN {
         MEMBERSHIP_DEPOSIT = membershipDeposit;
         DEPTH = depth;
         SET_SIZE = 1 << depth;
+
+        uint256 FEE_PERCENTAGE = 5;
+        FEE = FEE_PERCENTAGE * MEMBERSHIP_DEPOSIT / 100;
 
         poseidonHasher = IPoseidonHasher(_poseidonHasher);
         token = IERC20(_token);
@@ -75,9 +83,10 @@ contract RLN {
         require(members[pubkey] != 0, "RLN, _withdraw: member doesn't exist");
         require(receiver != address(0), "RLN, _withdraw: empty receiver address");
 
-        token.safeTransfer(receiver, MEMBERSHIP_DEPOSIT);
-
         members[pubkey] = 0;
+
+        token.safeTransfer(FEE_RECEIVER, FEE);
+        token.safeTransfer(receiver, MEMBERSHIP_DEPOSIT - FEE);
 
         emit MemberWithdrawn(pubkey);
     }
