@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
-pragma solidity 0.8.19;
+pragma solidity ^0.8.17;
 
 import {IPoseidonHasher} from "./PoseidonHasher.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -30,7 +30,13 @@ contract RLN {
     event MemberRegistered(uint256 pubkey, uint256 index);
     event MemberWithdrawn(uint256 pubkey);
 
-    constructor(uint256 membershipDeposit, uint256 depth, address feeReceiver, address _poseidonHasher, address token) {
+    constructor(
+        uint256 membershipDeposit,
+        uint256 depth,
+        address feeReceiver,
+        address _poseidonHasher,
+        address _token
+    ) {
         MEMBERSHIP_DEPOSIT = membershipDeposit;
         DEPTH = depth;
         SET_SIZE = 1 << depth;
@@ -51,10 +57,10 @@ contract RLN {
 
     function registerBatch(uint256[] calldata pubkeys) external {
         uint256 pubkeyLen = pubkeys.length;
-        require(pubkeyIndex + pubkeylen <= SET_SIZE, "RLN, registerBatch: set is full");
+        require(pubkeyIndex + pubkeyLen <= SET_SIZE, "RLN, registerBatch: set is full");
 
         token.safeTransferFrom(msg.sender, address(this), MEMBERSHIP_DEPOSIT * pubkeyLen);
-        for (uint256 i = 0; i < pubkeylen; i++) {
+        for (uint256 i = 0; i < pubkeyLen; i++) {
             _register(pubkeys[i]);
         }
     }

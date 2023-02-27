@@ -10,8 +10,8 @@ contract RLNScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        PoseidonHasher poseidonHasher = new PoseidonHasher();
-        RLN rln = new RLN(vm.envUint("STAKE"), vm.envUint("DEPTH"), address(poseidonHasher));
+        // PoseidonHasher poseidonHasher = new PoseidonHasher();
+        // RLN rln = new RLN(vm.envUint("STAKE"), vm.envUint("DEPTH"), address(poseidonHasher));
 
         vm.stopBroadcast();
     }

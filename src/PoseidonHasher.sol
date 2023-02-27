@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17;
+pragma solidity ^0.8.17;
 
 interface IPoseidonHasher {
     function hash(uint256 input) external pure returns (uint256 result);
