@@ -6,16 +6,19 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract RLN {
+    // ERC20 staking support
     using SafeERC20 for IERC20;
 
     uint256 public immutable MEMBERSHIP_DEPOSIT;
     uint256 public immutable DEPTH;
     uint256 public immutable SET_SIZE;
 
+    // Address of fee receiver
     address public immutable FEE_RECEIVER;
 
     // Fee percentage
     uint256 public constant FEE_PERCENTAGE = 5;
+    // Fee amount
     uint256 public immutable FEE;
 
     uint256 public pubkeyIndex = 0;
@@ -65,21 +68,7 @@ contract RLN {
         pubkeyIndex += 1;
     }
 
-    function withdrawBatch(uint256[] calldata secrets, address[] calldata receivers) external {
-        uint256 batchSize = secrets.length;
-        require(batchSize != 0, "RLN, withdrawBatch: batch size zero");
-        require(batchSize == receivers.length, "RLN, withdrawBatch: batch size mismatch receivers");
-
-        for (uint256 i = 0; i < batchSize; i++) {
-            _withdraw(secrets[i], receivers[i]);
-        }
-    }
-
     function withdraw(uint256 secret, address receiver) external {
-        _withdraw(secret, receiver);
-    }
-
-    function _withdraw(uint256 secret, address receiver) internal {
         uint256 pubkey = hash(secret);
         require(members[pubkey] != 0, "RLN, _withdraw: member doesn't exist");
         require(receiver != address(0), "RLN, _withdraw: empty receiver address");
