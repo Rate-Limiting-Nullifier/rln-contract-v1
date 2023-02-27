@@ -23,3 +23,6 @@ Test:
 ```bash
 forge test
 ```
+
+## Current development track:
+* ERC20 support for staking
