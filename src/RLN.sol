@@ -22,7 +22,7 @@ contract RLN {
     uint256 public immutable FEE;
 
     uint256 public pubkeyIndex = 0;
-    mapping(uint256 => uint256) public members;
+    mapping(uint256 => address) public members;
 
     IPoseidonHasher public poseidonHasher;
     IERC20 public token;
@@ -66,23 +66,26 @@ contract RLN {
     }
 
     function _register(uint256 pubkey) internal {
-        require(members[pubkey] == 0, "RLN, register: pubkey already registered");
+        require(members[pubkey] == address(0), "RLN, register: pubkey already registered");
 
-        members[pubkey] = MEMBERSHIP_DEPOSIT;
-
+        members[pubkey] = msg.sender;
         emit MemberRegistered(pubkey, pubkeyIndex);
         pubkeyIndex += 1;
     }
 
     function withdraw(uint256 secret, address receiver) external {
         uint256 pubkey = hash(secret);
-        require(members[pubkey] != 0, "RLN, _withdraw: member doesn't exist");
+        require(members[pubkey] != address(0), "RLN, _withdraw: member doesn't exist");
         require(receiver != address(0), "RLN, _withdraw: empty receiver address");
 
-        members[pubkey] = 0;
+        if (members[pubkey] == receiver) {
+            token.safeTransfer(receiver, MEMBERSHIP_DEPOSIT);
+        } else {
+            token.safeTransfer(receiver, MEMBERSHIP_DEPOSIT - FEE);
+            token.safeTransfer(FEE_RECEIVER, FEE);
+        }
 
-        token.safeTransfer(FEE_RECEIVER, FEE);
-        token.safeTransfer(receiver, MEMBERSHIP_DEPOSIT - FEE);
+        delete members[pubkey];
 
         emit MemberWithdrawn(pubkey);
     }
