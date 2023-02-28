@@ -28,6 +28,7 @@ contract RLN {
     IERC20 public token;
 
     event MemberRegistered(uint256 pubkey, uint256 index);
+    event MemberSlashed(uint256 pubkey, address slasher);
     event MemberWithdrawn(uint256 pubkey);
 
     constructor(
@@ -80,14 +81,14 @@ contract RLN {
 
         if (members[pubkey] == receiver) {
             token.safeTransfer(receiver, MEMBERSHIP_DEPOSIT);
+            emit MemberWithdrawn(pubkey);
         } else {
             token.safeTransfer(receiver, MEMBERSHIP_DEPOSIT - FEE);
             token.safeTransfer(FEE_RECEIVER, FEE);
+            emit MemberSlashed(pubkey, receiver);
         }
 
         delete members[pubkey];
-
-        emit MemberWithdrawn(pubkey);
     }
 
     function hash(uint256 input) internal view returns (uint256) {
