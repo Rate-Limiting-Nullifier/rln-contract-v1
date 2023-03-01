@@ -10,7 +10,7 @@ error SetIsFull(uint256 pubkeyIndex, uint256 setSize);
 error SetIsFullBatch(uint256 pubkeyIndex, uint256 pubkeysLen, uint256 setSize);
 error PubkeyAlreadyRegistered(uint256 pubkey);
 error MemberDoesNotExist(address memberAddress);
-error EmptyReceiverAddress(address receiverAddress);
+error EmptyReceiverAddress();
 
 
 contract RLN {
@@ -92,7 +92,7 @@ contract RLN {
     function withdraw(uint256 secret, address receiver) external {
         // Make sure `receiver` is not a zero address
         if (receiver == address(0)) {
-            revert EmptyReceiverAddress(receiver);
+            revert EmptyReceiverAddress();
         }
         // Make sure the member exists
         uint256 pubkey = hash(secret);
