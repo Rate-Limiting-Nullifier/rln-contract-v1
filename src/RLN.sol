@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 error SetIsFull(uint256 pubkeyIndex, uint256 setSize);
 error SetIsFullBatch(uint256 pubkeyIndex, uint256 pubkeysLen, uint256 setSize);
 error PubkeyAlreadyRegistered(uint256 pubkey);
-error MemberDoesNotExist(address memberAddress);
+error MemberDoesNotExist();
 error EmptyReceiverAddress();
 
 
@@ -98,7 +98,7 @@ contract RLN {
         uint256 pubkey = hash(secret);
         address _memberAddress = members[pubkey];
         if (_memberAddress == address(0)) {
-            revert MemberDoesNotExist(_memberAddress);
+            revert MemberDoesNotExist();
         }
 
         if (_memberAddress == receiver) {
