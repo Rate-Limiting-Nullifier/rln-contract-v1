@@ -5,14 +5,6 @@ import {IPoseidonHasher} from "./PoseidonHasher.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-
-error SetIsFull(uint256 pubkeyIndex, uint256 setSize);
-error SetIsFullBatch(uint256 pubkeyIndex, uint256 pubkeysLen, uint256 setSize);
-error PubkeyAlreadyRegistered(uint256 pubkey);
-error MemberDoesNotExist();
-error EmptyReceiverAddress();
-
-
 contract RLN {
     // ERC20 staking support
     using SafeERC20 for IERC20;
@@ -58,9 +50,7 @@ contract RLN {
     }
 
     function register(uint256 pubkey) external {
-        if (pubkeyIndex >= SET_SIZE) {
-            revert SetIsFull(pubkeyIndex, SET_SIZE);
-        }
+        require(pubkeyIndex < SET_SIZE, "RLN, register: set is full");
 
         token.safeTransferFrom(msg.sender, address(this), MEMBERSHIP_DEPOSIT);
         _register(pubkey);
@@ -68,9 +58,7 @@ contract RLN {
 
     function registerBatch(uint256[] calldata pubkeys) external {
         uint256 pubkeyLen = pubkeys.length;
-        if (pubkeyIndex + pubkeyLen > SET_SIZE) {
-            revert SetIsFullBatch(pubkeyIndex, pubkeyLen, SET_SIZE);
-        }
+        require(pubkeyIndex + pubkeyLen <= SET_SIZE, "RLN, registerBatch: set is full");
 
         token.safeTransferFrom(msg.sender, address(this), MEMBERSHIP_DEPOSIT * pubkeyLen);
         for (uint256 i = 0; i < pubkeyLen; i++) {
@@ -80,9 +68,7 @@ contract RLN {
 
     function _register(uint256 pubkey) internal {
         // Make sure pubkey is not registered before
-        if (members[pubkey] != address(0)) {
-            revert PubkeyAlreadyRegistered(pubkey);
-        }
+        require(members[pubkey] != address(0), "RLN, _register: pubkey already registered");
 
         members[pubkey] = msg.sender;
         emit MemberRegistered(pubkey, pubkeyIndex);
@@ -90,17 +76,12 @@ contract RLN {
     }
 
     function withdraw(uint256 secret, address receiver) external {
-        // Make sure `receiver` is not a zero address
-        if (receiver == address(0)) {
-            revert EmptyReceiverAddress();
-        }
-        // Make sure the member exists
+        require(receiver != address(0), "RLN, withdraw: empty receiver address");
         uint256 pubkey = hash(secret);
         address _memberAddress = members[pubkey];
-        if (_memberAddress == address(0)) {
-            revert MemberDoesNotExist();
-        }
+        require(_memberAddress != address(0), "RLN, withdraw: member doesn't exist");
 
+        // If memberAddress == receiver, then withdraw money without a fee
         if (_memberAddress == receiver) {
             token.safeTransfer(receiver, MEMBERSHIP_DEPOSIT);
             emit MemberWithdrawn(pubkey);
