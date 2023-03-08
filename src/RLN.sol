@@ -58,6 +58,7 @@ contract RLN {
 
     function registerBatch(uint256[] calldata pubkeys) external {
         uint256 pubkeyLen = pubkeys.length;
+        require(pubkeyLen != 0, "RLN, registerBatch: pubkeys array is empty");
         require(pubkeyIndex + pubkeyLen <= SET_SIZE, "RLN, registerBatch: set is full");
 
         token.safeTransferFrom(msg.sender, address(this), MEMBERSHIP_DEPOSIT * pubkeyLen);
