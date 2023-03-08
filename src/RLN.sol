@@ -68,7 +68,7 @@ contract RLN {
 
     function _register(uint256 pubkey) internal {
         // Make sure pubkey is not registered before
-        require(members[pubkey] != address(0), "RLN, _register: pubkey already registered");
+        require(members[pubkey] == address(0), "RLN, _register: pubkey already registered");
 
         members[pubkey] = msg.sender;
         emit MemberRegistered(pubkey, pubkeyIndex);
