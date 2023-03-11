@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {IPoseidonHasher} from "./PoseidonHasher.sol";
+import {IGroupStorage} from "./GroupStorage.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -24,8 +25,9 @@ contract RLN {
     uint256 public pubkeyIndex = 0;
     mapping(uint256 => address) public members;
 
-    IPoseidonHasher public poseidonHasher;
     IERC20 public token;
+    IGroupStorage public groupStorage;
+    IPoseidonHasher public poseidonHasher;
 
     event MemberRegistered(uint256 pubkey, uint256 index);
     event MemberSlashed(uint256 pubkey, address slasher);
@@ -35,8 +37,9 @@ contract RLN {
         uint256 membershipDeposit,
         uint256 depth,
         address feeReceiver,
+        address _token,
         address _poseidonHasher,
-        address _token
+        address _groupStorage
     ) {
         MEMBERSHIP_DEPOSIT = membershipDeposit;
         DEPTH = depth;
@@ -45,8 +48,9 @@ contract RLN {
         FEE_RECEIVER = feeReceiver;
         FEE = FEE_PERCENTAGE * MEMBERSHIP_DEPOSIT / 100;
 
-        poseidonHasher = IPoseidonHasher(_poseidonHasher);
         token = IERC20(_token);
+        groupStorage = IGroupStorage(_groupStorage);
+        poseidonHasher = IPoseidonHasher(_poseidonHasher);
     }
 
     function register(uint256 pubkey) external {
@@ -68,22 +72,19 @@ contract RLN {
     }
 
     function _register(uint256 pubkey) internal {
-        // Make sure pubkey is not registered before
-        require(members[pubkey] == address(0), "RLN, _register: pubkey already registered");
-
-        members[pubkey] = msg.sender;
+        groupStorage.set(pubkey);
         emit MemberRegistered(pubkey, pubkeyIndex);
         pubkeyIndex += 1;
     }
 
     function withdraw(uint256 secret, address receiver) external {
         require(receiver != address(0), "RLN, withdraw: empty receiver address");
+
         uint256 pubkey = hash(secret);
-        address _memberAddress = members[pubkey];
-        require(_memberAddress != address(0), "RLN, withdraw: member doesn't exist");
+        address memberAddress = groupStorage.remove(pubkey);
 
         // If memberAddress == receiver, then withdraw money without a fee
-        if (_memberAddress == receiver) {
+        if (memberAddress == receiver) {
             token.safeTransfer(receiver, MEMBERSHIP_DEPOSIT);
             emit MemberWithdrawn(pubkey);
         } else {
@@ -91,8 +92,6 @@ contract RLN {
             token.safeTransfer(FEE_RECEIVER, FEE);
             emit MemberSlashed(pubkey, receiver);
         }
-
-        delete members[pubkey];
     }
 
     function hash(uint256 input) internal view returns (uint256) {
