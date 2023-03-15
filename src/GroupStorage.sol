@@ -1,27 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 pragma solidity ^0.8.17;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 interface IGroupStorage {
-    function set(uint256) external;
-    function remove(uint256) external returns (address);
+    function set(uint256, address) external;
+    function remove(uint256) external;
+    function members(uint256) external view returns (address);
 }
 
-contract GroupStorage {
+contract GroupStorage is IGroupStorage, Ownable {
     mapping(uint256 => address) public members;
 
-    function set(uint256 pubkey) external {
-        // Make sure pubkey is not registered already
-        require(members[pubkey] == address(0), "Pubkey already registered");
-
-        members[pubkey] = tx.origin;
+    function set(uint256 pubkey, address value) external onlyOwner {
+        members[pubkey] = value;
     }
 
-    function remove(uint256 pubkey) external returns (address) {
-        address memberAddress = members[pubkey];
-        require(memberAddress != address(0), "Member doesn't exist");
-
+    function remove(uint256 pubkey) external onlyOwner {
         delete members[pubkey];
-
-        return memberAddress;
     }
 }

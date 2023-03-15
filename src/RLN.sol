@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract RLN {
-    // ERC20 staking support
     using SafeERC20 for IERC20;
 
     uint256 public immutable MEMBERSHIP_DEPOSIT;
@@ -38,8 +37,8 @@ contract RLN {
         uint256 depth,
         address feeReceiver,
         address _token,
-        address _poseidonHasher,
-        address _groupStorage
+        address _groupStorage,
+        address _poseidonHasher
     ) {
         MEMBERSHIP_DEPOSIT = membershipDeposit;
         DEPTH = depth;
@@ -72,7 +71,8 @@ contract RLN {
     }
 
     function _register(uint256 pubkey) internal {
-        groupStorage.set(pubkey);
+        require(groupStorage.members(pubkey) == address(0), "Pubkey already registered");
+        groupStorage.set(pubkey, msg.sender);
         emit MemberRegistered(pubkey, pubkeyIndex);
         pubkeyIndex += 1;
     }
@@ -81,7 +81,10 @@ contract RLN {
         require(receiver != address(0), "RLN, withdraw: empty receiver address");
 
         uint256 pubkey = hash(secret);
-        address memberAddress = groupStorage.remove(pubkey);
+
+        address memberAddress = groupStorage.members(pubkey);
+        require(memberAddress != address(0), "Member doesn't exist");
+        groupStorage.remove(pubkey);
 
         // If memberAddress == receiver, then withdraw money without a fee
         if (memberAddress == receiver) {
