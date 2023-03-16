@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import {IPoseidonHasher} from "./PoseidonHasher.sol";
-import {IGroupStorage} from "./GroupStorage.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -25,7 +24,6 @@ contract RLN {
     mapping(uint256 => address) public members;
 
     IERC20 public token;
-    IGroupStorage public groupStorage;
     IPoseidonHasher public poseidonHasher;
 
     event MemberRegistered(uint256 pubkey, uint256 index);
@@ -37,7 +35,6 @@ contract RLN {
         uint256 depth,
         address feeReceiver,
         address _token,
-        address _groupStorage,
         address _poseidonHasher
     ) {
         MEMBERSHIP_DEPOSIT = membershipDeposit;
@@ -48,7 +45,6 @@ contract RLN {
         FEE = FEE_PERCENTAGE * MEMBERSHIP_DEPOSIT / 100;
 
         token = IERC20(_token);
-        groupStorage = IGroupStorage(_groupStorage);
         poseidonHasher = IPoseidonHasher(_poseidonHasher);
     }
 
@@ -71,9 +67,11 @@ contract RLN {
     }
 
     function _register(uint256 pubkey) internal {
-        require(groupStorage.members(pubkey) == address(0), "Pubkey already registered");
-        groupStorage.set(pubkey, msg.sender);
+        require(members[pubkey] == address(0), "Pubkey already registered");
+
+        members[pubkey] = msg.sender;
         emit MemberRegistered(pubkey, pubkeyIndex);
+
         pubkeyIndex += 1;
     }
 
@@ -82,9 +80,8 @@ contract RLN {
 
         uint256 pubkey = hash(secret);
 
-        address memberAddress = groupStorage.members(pubkey);
+        address memberAddress = members[pubkey];
         require(memberAddress != address(0), "Member doesn't exist");
-        groupStorage.remove(pubkey);
 
         // If memberAddress == receiver, then withdraw money without a fee
         if (memberAddress == receiver) {
@@ -95,6 +92,8 @@ contract RLN {
             token.safeTransfer(FEE_RECEIVER, FEE);
             emit MemberSlashed(pubkey, receiver);
         }
+
+        delete members[pubkey];
     }
 
     function hash(uint256 input) internal view returns (uint256) {
