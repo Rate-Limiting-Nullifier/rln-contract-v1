@@ -25,4 +25,6 @@ forge test
 ```
 
 ## Current development track:
-* ERC20 support for staking
+* [ ] ERC20 support for staking
+* [ ] Fees support
+* [ ] NatSpec docs
