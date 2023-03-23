@@ -135,6 +135,8 @@ contract RLN is Ownable {
         address memberAddress = members[pubkey];
         require(memberAddress != address(0), "Member doesn't exist");
 
+        delete members[pubkey];
+
         // If memberAddress == receiver, then withdraw money without a fee
         if (memberAddress == receiver) {
             token.safeTransfer(receiver, MEMBERSHIP_DEPOSIT);
@@ -144,8 +146,6 @@ contract RLN is Ownable {
             token.safeTransfer(FEE_RECEIVER, FEE_AMOUNT);
             emit MemberSlashed(pubkey, receiver);
         }
-
-        delete members[pubkey];
     }
 
     /// @dev Changes fee percentage.
