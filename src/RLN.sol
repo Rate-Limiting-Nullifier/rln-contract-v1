@@ -38,13 +38,13 @@ contract RLN is Ownable {
     mapping(uint256 => address) public members;
 
     /// @dev ERC20 Token used for staking.
-    IERC20 public token;
+    IERC20 public immutable token;
 
     /// @dev Poseidon hasher.
-    IPoseidonHasher public poseidonHasher;
+    IPoseidonHasher public immutable poseidonHasher;
 
     /// @dev Groth16 verifier.
-    IVerifier public verifier;
+    IVerifier public immutable verifier;
 
     /// @dev Emmited when a new member registered.
     /// @param pubkey: pubkey or `id_commitment`;
@@ -82,7 +82,7 @@ contract RLN is Ownable {
 
         FEE_PERCENTAGE = feePercentage;
         FEE_RECEIVER = feeReceiver;
-        FEE_AMOUNT = FEE_PERCENTAGE * MEMBERSHIP_DEPOSIT / 100;
+        FEE_AMOUNT = (FEE_PERCENTAGE * MEMBERSHIP_DEPOSIT) / 100;
 
         token = IERC20(_token);
         poseidonHasher = IPoseidonHasher(_poseidonHasher);
@@ -109,9 +109,16 @@ contract RLN is Ownable {
     function registerBatch(uint256[] calldata pubkeys) external {
         uint256 pubkeyLen = pubkeys.length;
         require(pubkeyLen != 0, "RLN, registerBatch: pubkeys array is empty");
-        require(pubkeyIndex + pubkeyLen <= SET_SIZE, "RLN, registerBatch: set is full");
+        require(
+            pubkeyIndex + pubkeyLen <= SET_SIZE,
+            "RLN, registerBatch: set is full"
+        );
 
-        token.safeTransferFrom(msg.sender, address(this), MEMBERSHIP_DEPOSIT * pubkeyLen);
+        token.safeTransferFrom(
+            msg.sender,
+            address(this),
+            MEMBERSHIP_DEPOSIT * pubkeyLen
+        );
         for (uint256 i = 0; i < pubkeyLen; i++) {
             _register(pubkeys[i]);
         }
@@ -135,15 +142,26 @@ contract RLN is Ownable {
     /// @param identityCommitment: `identityCommitment`;
     /// @param receiver: Stake receiver;
     /// @param proof: Groth16 proof;
-    function withdraw(uint256 identityCommitment, address receiver, uint256[8] calldata proof) external {
-        require(receiver != address(0), "RLN, withdraw: empty receiver address");
+    function withdraw(
+        uint256 identityCommitment,
+        address receiver,
+        uint256[8] calldata proof
+    ) external {
+        require(
+            receiver != address(0),
+            "RLN, withdraw: empty receiver address"
+        );
 
         address memberAddress = members[identityCommitment];
         require(memberAddress != address(0), "Member doesn't exist");
+        // Right shifting by 2 bits to be compatible with bn254 curve
+        uint256 addressHash = uint256(keccak256(abi.encodePacked(receiver))) >>
+            2;
 
-        uint256 addressHash = hash(uint256(uint160(receiver)));
-
-        require(verifier.verifyProof(addressHash, identityCommitment, proof), "RLN, withdraw: wrong proof");
+        require(
+            verifier.verifyProof(addressHash, identityCommitment, proof),
+            "RLN, withdraw: wrong proof"
+        );
 
         delete members[identityCommitment];
 
@@ -163,7 +181,7 @@ contract RLN is Ownable {
     /// @param feePercentage: New fee percentage.
     function changeFeePercentage(uint8 feePercentage) external onlyOwner {
         FEE_PERCENTAGE = feePercentage;
-        FEE_AMOUNT = FEE_PERCENTAGE * MEMBERSHIP_DEPOSIT / 100;
+        FEE_AMOUNT = (FEE_PERCENTAGE * MEMBERSHIP_DEPOSIT) / 100;
     }
 
     /// @dev Changes fee receiver.
