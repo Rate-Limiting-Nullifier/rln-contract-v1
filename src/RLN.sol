@@ -5,6 +5,7 @@ import {IPoseidonHasher} from "./PoseidonHasher.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import {IVerifier} from "./IVerifier.sol";
 
 /// @title Rate-Limit Nullifier registry contract
 /// @dev This contract allows you to register RLN commitment and withdraw/slash.
@@ -42,6 +43,9 @@ contract RLN is Ownable {
     /// @dev Poseidon hasher.
     IPoseidonHasher public poseidonHasher;
 
+    /// @dev Groth16 verifier.
+    IVerifier public verifier;
+
     /// @dev Emmited when a new member registered.
     /// @param pubkey: pubkey or `id_commitment`;
     /// @param index: pubkeyIndex value.
@@ -61,14 +65,16 @@ contract RLN is Ownable {
     /// @param feePercentage: Fee percentage;
     /// @param feeReceiver: Address of the fee receiver;
     /// @param _token: Address of the ERC20 contract;
-    /// @param _poseidonHasher: Address of the Poseidon hasher contract.
+    /// @param _poseidonHasher: Address of the Poseidon hasher contract;
+    /// @param _verifier: Address of the Groth16 Verifier.
     constructor(
         uint256 membershipDeposit,
         uint256 depth,
         uint8 feePercentage,
         address feeReceiver,
         address _token,
-        address _poseidonHasher
+        address _poseidonHasher,
+        address _verifier
     ) {
         MEMBERSHIP_DEPOSIT = membershipDeposit;
         DEPTH = depth;
@@ -80,6 +86,7 @@ contract RLN is Ownable {
 
         token = IERC20(_token);
         poseidonHasher = IPoseidonHasher(_poseidonHasher);
+        verifier = IVerifier(_verifier);
     }
 
     /// @dev Adds `id_commitment` to the registry set and takes the necessary stake amount.
@@ -125,26 +132,29 @@ contract RLN is Ownable {
     /// @dev Remove the pubkey from the registry (withdraw/slash).
     /// Transfer the entire stake to the receiver if they registered
     /// calculated pubkey, otherwise transfers `FEE` to the `FEE_RECEIVER`
-    /// @param secret: `identity_secret`;
-    /// @param receiver: Stake receiver.
-    function withdraw(uint256 secret, address receiver) external {
+    /// @param identityCommitment: `identityCommitment`;
+    /// @param receiver: Stake receiver;
+    /// @param proof: Groth16 proof;
+    function withdraw(uint256 identityCommitment, address receiver, uint256[8] calldata proof) external {
         require(receiver != address(0), "RLN, withdraw: empty receiver address");
 
-        uint256 pubkey = hash(secret);
-
-        address memberAddress = members[pubkey];
+        address memberAddress = members[identityCommitment];
         require(memberAddress != address(0), "Member doesn't exist");
 
-        delete members[pubkey];
+        uint256 addressHash = hash(uint256(uint160(receiver)));
+
+        require(verifier.verifyProof(addressHash, identityCommitment, proof), "RLN, withdraw: wrong proof");
+
+        delete members[identityCommitment];
 
         // If memberAddress == receiver, then withdraw money without a fee
         if (memberAddress == receiver) {
             token.safeTransfer(receiver, MEMBERSHIP_DEPOSIT);
-            emit MemberWithdrawn(pubkey);
+            emit MemberWithdrawn(identityCommitment);
         } else {
             token.safeTransfer(receiver, MEMBERSHIP_DEPOSIT - FEE_AMOUNT);
             token.safeTransfer(FEE_RECEIVER, FEE_AMOUNT);
-            emit MemberSlashed(pubkey, receiver);
+            emit MemberSlashed(identityCommitment, receiver);
         }
     }
 
