@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 pragma solidity ^0.8.17;
 
-import {IPoseidonHasher} from "./PoseidonHasher.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -40,9 +39,6 @@ contract RLN is Ownable {
     /// @dev ERC20 Token used for staking.
     IERC20 public immutable token;
 
-    /// @dev Poseidon hasher.
-    IPoseidonHasher public immutable poseidonHasher;
-
     /// @dev Groth16 verifier.
     IVerifier public immutable verifier;
 
@@ -65,7 +61,6 @@ contract RLN is Ownable {
     /// @param feePercentage: Fee percentage;
     /// @param feeReceiver: Address of the fee receiver;
     /// @param _token: Address of the ERC20 contract;
-    /// @param _poseidonHasher: Address of the Poseidon hasher contract;
     /// @param _verifier: Address of the Groth16 Verifier.
     constructor(
         uint256 membershipDeposit,
@@ -73,7 +68,6 @@ contract RLN is Ownable {
         uint8 feePercentage,
         address feeReceiver,
         address _token,
-        address _poseidonHasher,
         address _verifier
     ) {
         MEMBERSHIP_DEPOSIT = membershipDeposit;
@@ -85,7 +79,6 @@ contract RLN is Ownable {
         FEE_AMOUNT = (FEE_PERCENTAGE * MEMBERSHIP_DEPOSIT) / 100;
 
         token = IERC20(_token);
-        poseidonHasher = IPoseidonHasher(_poseidonHasher);
         verifier = IVerifier(_verifier);
     }
 
@@ -109,16 +102,9 @@ contract RLN is Ownable {
     function registerBatch(uint256[] calldata pubkeys) external {
         uint256 pubkeyLen = pubkeys.length;
         require(pubkeyLen != 0, "RLN, registerBatch: pubkeys array is empty");
-        require(
-            pubkeyIndex + pubkeyLen <= SET_SIZE,
-            "RLN, registerBatch: set is full"
-        );
+        require(pubkeyIndex + pubkeyLen <= SET_SIZE, "RLN, registerBatch: set is full");
 
-        token.safeTransferFrom(
-            msg.sender,
-            address(this),
-            MEMBERSHIP_DEPOSIT * pubkeyLen
-        );
+        token.safeTransferFrom(msg.sender, address(this), MEMBERSHIP_DEPOSIT * pubkeyLen);
         for (uint256 i = 0; i < pubkeyLen; i++) {
             _register(pubkeys[i]);
         }
@@ -142,26 +128,15 @@ contract RLN is Ownable {
     /// @param identityCommitment: `identityCommitment`;
     /// @param receiver: Stake receiver;
     /// @param proof: Groth16 proof;
-    function withdraw(
-        uint256 identityCommitment,
-        address receiver,
-        uint256[8] calldata proof
-    ) external {
-        require(
-            receiver != address(0),
-            "RLN, withdraw: empty receiver address"
-        );
+    function withdraw(uint256 identityCommitment, address receiver, uint256[8] calldata proof) external {
+        require(receiver != address(0), "RLN, withdraw: empty receiver address");
 
         address memberAddress = members[identityCommitment];
         require(memberAddress != address(0), "Member doesn't exist");
         // Right shifting by 2 bits to be compatible with bn254 curve
-        uint256 addressHash = uint256(keccak256(abi.encodePacked(receiver))) >>
-            2;
+        uint256 addressHash = uint256(keccak256(abi.encodePacked(receiver))) >> 2;
 
-        require(
-            verifier.verifyProof(addressHash, identityCommitment, proof),
-            "RLN, withdraw: wrong proof"
-        );
+        require(verifier.verifyProof(addressHash, identityCommitment, proof), "RLN, withdraw: wrong proof");
 
         delete members[identityCommitment];
 
@@ -189,11 +164,5 @@ contract RLN is Ownable {
     /// @param feeReceiver: New fee receiver.
     function changeFeeReceiver(address feeReceiver) external onlyOwner {
         FEE_RECEIVER = feeReceiver;
-    }
-
-    /// @dev Returns Poseidon hash.
-    /// @param input: uint256 input (preimage).
-    function hash(uint256 input) internal view returns (uint256) {
-        return poseidonHasher.hash(input);
     }
 }

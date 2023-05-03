@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
-import "../src/PoseidonHasher.sol";
 import "../src/RLN.sol";
 
 contract RLNScript is Script {
@@ -10,7 +9,6 @@ contract RLNScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        // PoseidonHasher poseidonHasher = new PoseidonHasher();
         // RLN rln = new RLN(vm.envUint("STAKE"), vm.envUint("DEPTH"), address(poseidonHasher));
 
         vm.stopBroadcast();

@@ -3,11 +3,9 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "../src/RLN.sol";
-import "../src/PoseidonHasher.sol";
 
 contract RlnTest is Test {
     RLN public rln;
-    PoseidonHasher public poseidonHasher;
 
     event MemberRegistered(uint256 pubkey, uint256 index);
     event MemberWithdrawn(uint256 pubkey);
