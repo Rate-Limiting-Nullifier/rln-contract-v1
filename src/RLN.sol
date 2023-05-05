@@ -102,9 +102,16 @@ contract RLN is Ownable {
     function registerBatch(uint256[] calldata pubkeys) external {
         uint256 pubkeyLen = pubkeys.length;
         require(pubkeyLen != 0, "RLN, registerBatch: pubkeys array is empty");
-        require(pubkeyIndex + pubkeyLen <= SET_SIZE, "RLN, registerBatch: set is full");
+        require(
+            pubkeyIndex + pubkeyLen <= SET_SIZE,
+            "RLN, registerBatch: set is full"
+        );
 
-        token.safeTransferFrom(msg.sender, address(this), MEMBERSHIP_DEPOSIT * pubkeyLen);
+        token.safeTransferFrom(
+            msg.sender,
+            address(this),
+            MEMBERSHIP_DEPOSIT * pubkeyLen
+        );
         for (uint256 i = 0; i < pubkeyLen; i++) {
             _register(pubkeys[i]);
         }
@@ -128,15 +135,23 @@ contract RLN is Ownable {
     /// @param identityCommitment: `identityCommitment`;
     /// @param receiver: Stake receiver;
     /// @param proof: Snarkjs's format generated proof (without public inputs) packed consequently;
-    function withdraw(uint256 identityCommitment, address receiver, uint256[8] calldata proof) external {
-        require(receiver != address(0), "RLN, withdraw: empty receiver address");
+    function withdraw(
+        uint256 identityCommitment,
+        address receiver,
+        uint256[8] calldata proof
+    ) external {
+        require(
+            receiver != address(0),
+            "RLN, withdraw: empty receiver address"
+        );
 
         address memberAddress = members[identityCommitment];
         require(memberAddress != address(0), "Member doesn't exist");
-        // Right shifting by 2 bits to be compatible with bn254 curve
-        uint256 addressHash = uint256(keccak256(abi.encodePacked(receiver))) >> 2;
 
-        require(_verifyProof(addressHash, identityCommitment, proof), "RLN, withdraw: wrong proof");
+        require(
+            _verifyProof(identityCommitment, receiver, proof),
+            "RLN, withdraw: invalid proof"
+        );
 
         delete members[identityCommitment];
 
@@ -167,16 +182,17 @@ contract RLN is Ownable {
     }
 
     /// @dev Groth16 proof verification
-    function _verifyProof(uint256 idCommitment, uint256 addressHash, uint256[8] calldata proof)
-        internal
-        view
-        returns (bool)
-    {
-        return verifier.verifyProof(
-            [proof[0], proof[1]],
-            [[proof[2], proof[3]], [proof[4], proof[5]]],
-            [proof[6], proof[7]],
-            [idCommitment, addressHash]
-        );
+    function _verifyProof(
+        uint256 idCommitment,
+        address receiver,
+        uint256[8] calldata proof
+    ) internal view returns (bool) {
+        return
+            verifier.verifyProof(
+                [proof[0], proof[1]],
+                [[proof[2], proof[3]], [proof[4], proof[5]]],
+                [proof[6], proof[7]],
+                [idCommitment, uint256(uint160(receiver))]
+            );
     }
 }
