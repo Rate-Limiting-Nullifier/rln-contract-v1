@@ -1,5 +1,12 @@
 <h1 align=center>Foundry project for Rate-Limit Nullifier contract</h1>
 
+## This repo is deprecated. Contracts are now [here](https://github.com/Rate-Limiting-Nullifier/rln-contracts)
+
+___
+___
+___
+
+
 <p align="center">
     <img src="https://github.com/Rate-Limiting-Nullifier/rln-contract/workflows/Tests/badge.svg" width="140">
 </p>
